@@ -10,8 +10,8 @@ import pandas
 
 
 def paths_to_vars():
-	WORKING_FOLDER = os.getcwd() + '/VQGAN-CLIP/'
-	COLORS_NAMES = pandas.read_csv(os.getcwd() + 'sources/colorhexa_com.csv').Name.tolist()
+	WORKING_FOLDER = os.getcwd() + '/'
+	COLORS_NAMES = pandas.read_csv(WORKING_FOLDER + 'sources/colorhexa_com.csv').Name.tolist()
 	COLOR_NAMES = [_ for _ in COLORS_NAMES if len(_.split()) == 1]
 	QUALITIES_NAMES = ['detailed', 'dynamic', 'blurry', 'noisy', 'random', 'textured', 'soft', 'cinematic', 'photography', 'polaroid',
 	'photorealistic', 'hyperrrealistic', 'impressionism', 'rendered in unity', 'rays', 'fog', 'clouds', 'sparkles', 'light bulbs']
@@ -83,7 +83,7 @@ def generate_images(args):
 		print(f"\n\nImage #{n+1}/{args['num']}:\nITERS: {it}\nSIZE: {args['size']}")
 		Faker.seed(time.time())
 		picture_name = f"{date.today()}/{fake.pystr(max_chars=8)}-{optimiser}-{it}it-{args['size'][0]}x{args['size'][1]}.png"
-		os.system(f"python {args['WORKING_FOLDER']}generate.py -p '{text}' -s {args['size'][0]} {args['size'][1]} -i {it} -opt {optimiser} --output {picture_name}")
+		os.system(f"python {args['WORKING_FOLDER']}/VQGAN-CLIP/generate.py -p '{text}' -s {args['size'][0]} {args['size'][1]} -i {it} -opt {optimiser} --output {picture_name}")
 		while not os.path.exists(f"{args['WORKING_FOLDER']}/{picture_name}"):
 			time.sleep(1)			
 

@@ -130,3 +130,6 @@ dmypy.json
 
 
 /VQGAN-CLIP
+/taming
+/checkpoints
+/2*
