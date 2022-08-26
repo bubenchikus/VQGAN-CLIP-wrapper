@@ -11,7 +11,7 @@ curl -L -o ./checkpoints/vqgan_imagenet_f16_16384.ckpt -C - 'https://heibox.uni-
 conda create --name vqgan python=3.9
 conda activate vqgan
 
-pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+pip install torch==1.10.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
 pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer faker pandas setuptools==59.5.0 taming-transformers
 
 
