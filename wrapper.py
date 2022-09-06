@@ -24,7 +24,7 @@ def parse():
 	parser.add_argument('--runtest', help="run test request (other request arguments (except --example) will be ignored)")
 	parser.add_argument('--text', '-t', help="request text", type=str, default=None)
 	parser.add_argument('--size', '-s', help="picture resolution", type=int, nargs=2, default=[150, 150])
-	parser.add_argument('--iter', '-i', help="number of iterations", type=int, default=50)
+	parser.add_argument('--iter', '-i', help="number of iterations", type=int, default=None)
 	parser.add_argument('--num', '-n', help="number of pictures to generate", type=int, default=10)
 	parser.add_argument('--optimiser', '-opt', help="optimiser from list: [Adam,AdamW,Adagrad,Adamax,DiffGrad,RAdam,RMSprop]", type=str, default=None)
 	parser.add_argument('--iter_randomness', help="max deviation for number of iterations in percents", type=int, default=0)
@@ -37,6 +37,7 @@ def parse():
 	parser.add_argument('--initial_image', '-ii', help="initial image.", type=str, default=None)
 	parser.add_argument('--generate_portrait', '-gp', help="generate portrait.", type=bool, default=False)
 	parser.add_argument('--generate_character', '-gc', help="generate character.", type=bool, default=False)
+	parser.add_argument('--save_every', '-se', help="save image iterations.", type=int, default=None)
 	args = vars(parser.parse_args())
 	return args
 
@@ -82,14 +83,13 @@ def generate_text():
 	pass
 
 
-def generate_image(args, n, fake):
+def general_generator(args, n, fake):
+	optimiser = choose_optimiser(args)
 	it = randomize_iter(args)
 	text = randomize_text(args)
-	optimiser = choose_optimiser(args)
 	print(f"\n\nImage #{n+1}/{args['num']}:\nITERS: {it}\nSIZE: {args['size']}")
-	Faker.seed(time.time())
 	picture_name = f"{date.today()}/{fake.pystr(max_chars=8)}-{optimiser}-{it}it-{args['size'][0]}x{args['size'][1]}.png"
-	request = f"python {args['WORKING_FOLDER']}VQGAN-CLIP/generate.py -p '{text}' -s {args['size'][0]} {args['size'][1]} -i {it} -opt {optimiser} --output {picture_name}"
+	request = f"python {args['WORKING_FOLDER']}VQGAN-CLIP/generate.py -p '{text}' -s {args['size'][0]} {args['size'][1]} -i {it} -opt {optimiser} --output {picture_name} -se {args['save_every']}"
 	if args['initial_image']:
 		request += f" -ii {args['initial_image']}"
 	os.system(request)
@@ -97,31 +97,36 @@ def generate_image(args, n, fake):
 		time.sleep(1)	
 
 
-def generate_images(args):
-	fake = Faker()
+def generate_images(args, fake):
+	if args['iter'] is None:
+		args['iter'] = 50
 	for n in range(args['num']):
-		generate_image(args, n, fake)
+		general_generator(args, n, fake)
 
 
-def generate_portrait(args):
-	fake = Faker()
+def generate_portrait(args, fake):
 	pictures_folder = args['WORKING_FOLDER'] + 'sources/base_face/'
 	pictures = [pictures_folder + _ for _ in os.listdir(pictures_folder)]
-	args['text'] = f"{random.choice(args['COLORS_NAMES'])} hair:50|{random.choice(['pale', 'dark'])} skin:50"
-	args['iter'] = 100
+
 	for n in range(args['num']):
+		if args['iter'] is None:
+			if args['optimiser'] == 'RMSprop':
+				args['iter'] = 50
+			else:
+				args['iter'] = 100
+		args['text'] = f"portrait painting:100|{random.choice(args['COLORS_NAMES'])} hair:50|{random.choice(['pale', 'beige', 'brown', 'black'])} skin:50|{random.choice(args['COLORS_NAMES'])} background:50"
 		args['initial_image'] = random.choice(pictures)
 		img = cv2.imread(args['initial_image'])
 		args['size'] = [img.shape[1], img.shape[0]]
-		generate_image(args, n, fake)
+		general_generator(args, n, fake)
 
 
-def generate_character(args):
-	fake = Faker()
+def generate_character(args, fake):
 	pictures_folder = args['WORKING_FOLDER'] + 'sources/base_body/'
 	pictures = [pictures_folder + _ for _ in os.listdir(pictures_folder)]
-	args['text'] = f""
-	args['iter'] = 100
+	args['text'] = f"human figure:100|detailed outfit:70"
+	if args['iter'] is None:
+		args['iter'] = 100
 	for n in range(args['num']):
 		args['initial_image'] = random.choice(pictures)
 		img = cv2.imread(args['initial_image'])
@@ -135,16 +140,19 @@ def beep():
 
 if __name__ == '__main__':
 	args = parse()
+
+	fake = Faker()
+	Faker.seed(time.time())
 	args['WORKING_FOLDER'], args['COLORS_NAMES'], args['QUALITIES_NAMES'] = paths_to_vars()
 	create_session_folder(args['WORKING_FOLDER'])
 
 	if (args['generate_portrait']):
-		generate_portrait(args)
+		generate_portrait(args, fake)
 	elif (args['generate_character']):
-		generate_character(args)
+		generate_character(args, fake)
 	elif type(args['text']) == str:
-		args['text'] += ':100|'
-		generate_images(args)
+		args['text'] += ':100'
+		generate_images(args, fake)
 	else:
 		print("WRAPPER: this program can't work without text input")
 	
