@@ -18,3 +18,8 @@ pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio i
 git clone 'https://github.com/nerdyrodent/VQGAN-CLIP'
 git clone 'https://github.com/openai/CLIP' ./VQGAN-CLIP/CLIP
 ```
+
+## Run test:
+```
+python wrapper.py --runtest True
+```
