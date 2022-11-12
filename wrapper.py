@@ -27,7 +27,6 @@ def parse():
 	parser.add_argument('--num', '-n', help="number of pictures to generate", type=int, default=10)
 	parser.add_argument('--optimiser', '-opt', help="optimiser from list: [Adam,AdamW,Adagrad,Adamax,DiffGrad,RAdam,RMSprop]", type=str, default=None)
 	parser.add_argument('--iter_randomness', help="max deviation for number of iterations in percents", type=int, default=0)
-	parser.add_argument('--word_randomness', help="max weight deviation for each request word in percents", type=int, default=0)
 	parser.add_argument('--add_colors', help="add a little bit of color randomness", type=bool, default=False)
 	parser.add_argument('--add_colors_2', help="add colors with 60/30/10 proportion", type=bool, default=False)
 	parser.add_argument('--add_qualities', help="add random abstract qualities for more interesting result", type=bool, default=False)
@@ -51,7 +50,6 @@ def randomize_iter(args):
 
 
 def randomize_text(args):
-	# words_from_request = [word + f":{random.randint(100 - args['word_randomness'], 100 + args['word_randomness'])}" for word in args['text'].split(' ')]
 	words_from_request = [args['text']]
 	if args['add_colors']:
 		for sample in random.sample(args['COLORS_NAMES'], random.randint(1,3)):
@@ -76,11 +74,6 @@ def choose_optimiser(args):
 		return random.choice(optimisers)
 	return args['optimiser']
 
-
-def generate_text():
-	pass
-
-
 def general_generator(args, n, fake):
 	optimiser = choose_optimiser(args)
 	it = randomize_iter(args)
@@ -102,17 +95,18 @@ def generate_images(args, fake):
 		general_generator(args, n, fake)
 
 
+def configure_char_generation(args):
+	args['optimiser'] = 'RMSprop'
+	args['iter'] = 100
+	return args
+
+
 def generate_portrait(args, fake):
 	pictures_folder = args['WORKING_FOLDER'] + 'sources/base_face/'
 	pictures = [pictures_folder + _ for _ in os.listdir(pictures_folder)]
-
+	args = configure_char_generation(args)
 	for n in range(args['num']):
-		if args['iter'] is None:
-			if args['optimiser'] == 'RMSprop':
-				args['iter'] = 50
-			else:
-				args['iter'] = 100
-		args['text'] = f"portrait painting:100|{random.choice(args['COLORS_NAMES'])} hair:50|{random.choice(['pale', 'beige', 'brown', 'black'])} skin:50|{random.choice(args['COLORS_NAMES'])} background:50"
+		args['text'] = f"portrait painting:100|{random.choice(args['COLORS_NAMES'])} hair:50|{random.choice(['pale', 'beige', 'brown', 'black'])} skin:50|{random.choice(args['COLORS_NAMES'])} environment:70|{random.choice(['long', 'short'])} hair:50|{random.choice(['curly', 'straight'])} hair:50"
 		args['initial_image'] = random.choice(pictures)
 		img = cv2.imread(args['initial_image'])
 		args['size'] = [img.shape[1], img.shape[0]]
@@ -122,14 +116,13 @@ def generate_portrait(args, fake):
 def generate_character(args, fake):
 	pictures_folder = args['WORKING_FOLDER'] + 'sources/base_body/'
 	pictures = [pictures_folder + _ for _ in os.listdir(pictures_folder)]
-	args['text'] = f"human figure:100|detailed outfit:70"
-	if args['iter'] is None:
-		args['iter'] = 100
+	args = configure_char_generation(args)
 	for n in range(args['num']):
+		args['text'] = f"human figure in detailed costume:100|{random.choice(['pale', 'beige', 'brown', 'black'])} skin:50|{random.choice(args['COLORS_NAMES'])} clothing:50"
 		args['initial_image'] = random.choice(pictures)
 		img = cv2.imread(args['initial_image'])
 		args['size'] = [img.shape[1], img.shape[0]]
-		generate_image(args, n, fake)
+		general_generator(args, n, fake)
 		
 
 def beep():
@@ -148,7 +141,7 @@ if __name__ == '__main__':
 	if (args['runtest']):
 		args['text'] = 'quick brown fox jumps over the lazy dog'
 		args['num'] = 1
-		args['iter'] = 150
+		args['iter'] = 100
 		args['size'] = [100, 100]
 		generate_images(args, fake)
 	elif (args['generate_portrait']):
